@@ -237,4 +237,66 @@ No VM guests are running outdated hypervisor (qemu) binaries on this host.
 # Создаем  два файла конфигурации (/etc/nginx/nginx-first.conf, /etc/nginx/nginx-second.conf). Их можно сформировать из стандартного конфига /etc/nginx/nginx.conf
 ubuntuadmin@ubuntu01:~$ sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx-first.conf
 ubuntuadmin@ubuntu01:~$ sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx-second.conf
+ubuntuadmin@ubuntu01:~$ sudo cat /etc/nginx/nginx-first.conf
+user www-data;
+worker_processes auto;
+pid /run/nginx-first.pid;
+error_log /var/log/nginx/error.log;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections 768;
+}
+
+http {
+    ## Basic Settings
+    sendfile on;
+    tcp_nopush on;
+    types_hash_max_size 2048;
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    ## SSL Settings
+    ssl_protocols TLSv1.2 TLSv1.3;  # Убраны устаревшие TLSv1 и TLSv1.1
+    ssl_prefer_server_ciphers on;
+
+    ## Logging
+    access_log /var/log/nginx/access.log;
+
+    ## Gzip
+    gzip on;
+
+    ## Virtual Host Configs (только одно подключение)
+    #include /etc/nginx/conf.d/*.conf;
+    #include /etc/nginx/sites-enabled/*;
+
+    ## Example server block
+    server {
+        listen 9001;
+        server_name _;
+        root /var/www/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+    }
+}
+ubuntuadmin@ubuntu01:~$ sudo systemctl restart nginx@first
+ubuntuadmin@ubuntu01:~$ sudo systemctl status nginx@first
+● nginx@first.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/etc/systemd/system/nginx@.service; disabled; preset: enabled)
+     Active: active (running) since Thu 2026-06-11 21:08:08 UTC; 4s ago
+       Docs: man:nginx(8)
+    Process: 11659 ExecStartPre=/usr/sbin/nginx -t -c /etc/nginx/nginx-first.conf -q -g daemon on; master_>
+    Process: 11660 ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx-first.conf -g daemon on; master_process o>
+   Main PID: 11662 (nginx)
+      Tasks: 3 (limit: 4605)
+     Memory: 2.3M (peak: 2.4M)
+        CPU: 74ms
+     CGroup: /system.slice/system-nginx.slice/nginx@first.service
+             ├─11662 "nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx-first.conf -g daemon on; m>
+             ├─11663 "nginx: worker process"
+             └─11665 "nginx: worker process"
 
